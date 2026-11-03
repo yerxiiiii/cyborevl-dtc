@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mimmu 反馈后台</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        --ink: #24312d;
+        --muted: #536a64;
+        --line: #e2eae7;
+        --bg: #f1f4f2;
+        --card: #ffffff;
+        --accent: #2f8c8b;
+        --accent-dark: #345f53;
+        --danger: #b45a4f;
+        --side: #24312d;
+        --side-muted: #9fb4ad;
+        --sidebar-w: 232px;
+        --topbar-h: 60px;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: "Nunito", ui-sans-serif, system-ui, -apple-system, "PingFang SC", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      .layout { display: flex; min-height: 100vh; }
+
+      /* ---- 左侧导航 ---- */
+      .sidebar {
+        width: var(--sidebar-w);
+        flex: 0 0 var(--sidebar-w);
+        background: var(--side);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        transition: width 180ms ease, flex-basis 180ms ease;
+      }
+      /* 收起状态：只显示图标 */
+      .layout.collapsed .sidebar { width: 68px; flex-basis: 68px; }
+      .layout.collapsed .brand { justify-content: center; padding: 20px 0; }
+      .layout.collapsed .brand .logo,
+      .layout.collapsed .brand .title { display: none; }
+      .layout.collapsed .collapse-btn { margin-left: 0; }
+      .layout.collapsed .nav-item { justify-content: center; padding: 11px 0; }
+      .layout.collapsed .nav-item .lbl { display: none; }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 22px;
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+      .brand .logo {
+        width: 30px; height: 30px; border-radius: 9px;
+        background: var(--accent);
+        display: grid; place-items: center;
+        font-size: 1rem;
+      }
+      .nav { padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+      .nav-item {
+        display: flex; align-items: center; gap: 11px;
+        padding: 11px 14px; border-radius: 10px;
+        color: var(--side-muted); text-decoration: none;
+        font-size: 0.92rem; font-weight: 700;
+        cursor: pointer;
+      }
+      .nav-item .ico { width: 18px; text-align: center; }
+      .nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+      .nav-item.active { background: var(--accent); color: #fff; }
+      .nav-item.is-disabled { opacity: 0.55; cursor: default; }
+      .nav-item.is-disabled:hover { background: none; color: var(--side-muted); }
+
+      /* ---- 右侧主区 ---- */
+      .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+      .topbar {
+        height: var(--topbar-h);
+        flex: 0 0 var(--topbar-h);
+        background: var(--card);
+        border-bottom: 1px solid var(--line);
+        display: flex; align-items: center;
+        padding: 0 26px;
+        position: sticky; top: 0; z-index: 5;
+      }
+      .collapse-btn {
+        margin-left: auto;
+        background: none; border: none;
+        font-size: 1.2rem; line-height: 1;
+        color: var(--side-muted); cursor: pointer;
+        padding: 6px 8px; border-radius: 8px;
+      }
+      .collapse-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+      .crumb { color: var(--muted); font-size: 0.9rem; }
+      .crumb b { color: var(--ink); font-weight: 800; }
+      .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+      .user { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; }
+      .avatar {
+        width: 30px; height: 30px; border-radius: 50%;
+        background: var(--accent); color: #fff;
+        display: grid; place-items: center; font-size: 0.85rem; font-weight: 800;
+      }
+
+      .content { padding: 26px; }
+      h1 { margin: 0 0 20px; font-size: 1.45rem; }
+
+      /* ---- KPI 卡片 ---- */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+      .stat {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex; align-items: center; gap: 16px;
+      }
+      .stat .s-ico {
+        width: 46px; height: 46px; border-radius: 12px;
+        background: #e6f1ee; color: var(--accent);
+        display: grid; place-items: center; font-size: 1.25rem; flex: 0 0 auto;
+      }
+      .stat .s-label { color: var(--muted); font-size: 0.82rem; }
+      .stat .s-value { font-size: 1.7rem; font-weight: 800; line-height: 1.1; }
+
+      /* ---- 数据面板 ---- */
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .panel-head {
+        display: flex; align-items: center;
+        padding: 16px 20px; border-bottom: 1px solid var(--line);
+      }
+      .panel-head h2 { margin: 0; font-size: 1.05rem; }
+      .actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+      .btn-pill, .btn-icon {
+        background: var(--accent); color: #fff; border: none;
+        border-radius: 999px; font: inherit; font-weight: 700;
+        cursor: pointer; transition: background 160ms ease;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .btn-pill:hover, .btn-icon:hover { background: var(--accent-dark); }
+      .btn-pill { padding: 9px 18px; }
+      .btn-icon { width: 38px; height: 38px; padding: 0; }
+      .btn-danger {
+        background: var(--danger); color: #fff; border: none;
+        border-radius: 999px; padding: 9px 18px;
+        font: inherit; font-weight: 700; cursor: pointer; transition: background 160ms ease;
+      }
+      .btn-danger:hover:not(:disabled) { background: #9c4a40; }
+      .btn-danger:disabled { opacity: 0.45; cursor: default; }
+      .btn-ghost {
+        background: #eef4f1; color: var(--ink); border: none;
+        border-radius: 999px; padding: 9px 18px;
+        font: inherit; font-weight: 700; cursor: pointer;
+      }
+      .btn-ghost:hover { background: #e2eae7; }
+      .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+      .btn-icon.spinning svg { animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .export-wrap { position: relative; }
+      .export-menu {
+        position: absolute; right: 0; top: calc(100% + 6px);
+        background: var(--card); border: 1px solid var(--line);
+        border-radius: 12px; box-shadow: 0 10px 30px rgba(36, 49, 45, 0.15);
+        overflow: hidden; z-index: 10; min-width: 150px;
+      }
+      .export-menu[hidden] { display: none; }
+      .export-menu button {
+        display: block; width: 100%; text-align: left;
+        background: none; border: none; padding: 11px 16px;
+        font: inherit; cursor: pointer; color: var(--ink);
+      }
+      .export-menu button:hover { background: #eef4f1; }
+
+      #content { overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.9rem; table-layout: fixed; min-width: 1080px; }
+      .col-check { width: 44px; text-align: center; }
+      .col-check input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }
+      th, td {
+        padding: 13px 16px; text-align: left;
+        border-bottom: 1px solid var(--line); vertical-align: middle;
+      }
+      th { background: #f4f8f6; font-weight: 800; font-size: 0.76rem; letter-spacing: 0.03em; white-space: nowrap; }
+      tbody tr:last-child td { border-bottom: none; }
+      tbody tr:hover { background: #f7faf8; }
+
+      /* 邮箱 / 姓名：给足宽度，避免显示不全 */
+      .col-email  { width: 260px; }
+      .col-name   { width: 130px; }
+      /* 固定字段：恰好够完整显示，不换行 */
+      .col-color  { width: 130px; }
+      .col-intent { width: 180px; white-space: nowrap; }
+      .col-price  { width: 120px; white-space: nowrap; }
+      .col-time   { width: 175px; white-space: nowrap; }
+      /* 期望功能 / 留言：只留小宽度，截断 + 点击查看 */
+      .col-feat   { width: 120px; }
+      .col-msg    { width: 120px; }
+
+      td.clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .clickable { cursor: pointer; }
+      .clickable:hover { color: var(--accent); }
+      .feat-inline { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+      .feat-inline .tag { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+      .more { color: var(--muted); font-size: 0.8rem; flex: 0 0 auto; }
+      .tag { background: #e6f1ee; color: #2f6d56; border-radius: 999px; padding: 3px 11px; font-size: 0.8rem; white-space: nowrap; }
+      .muted { color: var(--muted); }
+      .empty, .loading { padding: 48px; text-align: center; color: var(--muted); }
+      .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+      .users-filter {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+        padding: 14px 20px; border-bottom: 1px solid var(--line);
+      }
+      .users-filter label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
+      .users-filter input { width: 15px; height: 15px; accent-color: var(--accent); }
+      .users-filter .btn-ghost { padding: 8px 16px; }
+      .users-table { min-width: 0; table-layout: auto; }
+      .users-table th:nth-child(1), .users-table td:nth-child(1) { width: 36%; }
+      .users-table th:nth-child(2), .users-table td:nth-child(2) { width: 22%; }
+
+      /* 分页 */
+      .pager {
+        display: flex; align-items: center; gap: 8px;
+        padding: 14px 20px; border-top: 1px solid var(--line);
+      }
+      .pager[hidden] { display: none; }
+      .pager .total { color: var(--muted); font-size: 0.85rem; margin-right: auto; }
+      .pager button {
+        min-width: 34px; height: 34px; padding: 0 10px;
+        background: var(--card); color: var(--ink);
+        border: 1px solid var(--line); border-radius: 9px;
+        font: inherit; cursor: pointer;
+      }
+      .pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+      .pager button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .pager button:disabled { opacity: 0.45; cursor: default; }
+      .pager .dots { color: var(--muted); padding: 0 2px; }
+
+      /* ---- 弹窗 ---- */
+      dialog {
+        width: min(92vw, 30rem); border: none; border-radius: 16px; padding: 0;
+        background: var(--card); color: var(--ink);
+        box-shadow: 0 1.5rem 3.5rem rgba(36, 49, 45, 0.28);
+      }
+      dialog::backdrop { background: rgba(36, 49, 45, 0.46); }
+      .dialog-card { padding: 24px 26px; position: relative; }
+      .dialog-card h3 { margin: 0 14px 14px 0; font-size: 1.1rem; }
+      .dialog-text { margin: 0; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+      .dialog-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+      .dialog-close {
+        position: absolute; top: 14px; right: 16px;
+        width: 32px; height: 32px;
+        display: grid; place-items: center;
+        background: none; border: none;
+        font-size: 1.6rem; line-height: 1;
+        color: var(--muted); cursor: pointer; border-radius: 8px;
+      }
+      .dialog-close:hover { background: #eef4f1; color: var(--ink); }
+
+      @media (max-width: 920px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 720px) {
+        .sidebar { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- 左侧导航 -->
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="logo">🦥</span>
+          <span class="title">Mimmu 后台</span>
+          <button class="collapse-btn" id="collapse-btn" type="button" aria-label="收起/展开侧栏">☰</button>
+        </div>
+        <nav class="nav">
+          <a class="nav-item active" data-view="feedback" title="反馈数据"><span class="ico">📋</span><span class="lbl">反馈数据</span></a>
+          <a class="nav-item" data-view="users" title="用户分析"><span class="ico">👥</span><span class="lbl">用户分析</span></a>
+          <a class="nav-item is-disabled" title="系统设置"><span class="ico">⚙️</span><span class="lbl">系统设置</span></a>
+        </nav>
+      </aside>
+
+      <!-- 右侧主区 -->
+      <div class="main">
+        <header class="topbar">
+          <span class="crumb">首页 / <b id="crumb-view">反馈数据</b></span>
+          <div class="topbar-right">
+            <div class="user"><span class="avatar">A</span>admin</div>
+          </div>
+        </header>
+
+        <div class="content">
+        <section id="view-feedback">
+          <h1>反馈数据</h1>
+
+          <!-- KPI 卡片 -->
+          <div class="stats-grid">
+            <div class="stat">
+              <span class="s-ico">📨</span>
+              <div><div class="s-label">总提交数</div><div class="s-value" id="kpi-total">–</div></div>
+            </div>
+            <div class="stat">
+              <span class="s-ico">💬</span>
+              <div><div class="s-label">含留言</div><div class="s-value" id="kpi-msg">–</div></div>
+            </div>
+            <div class="stat">
+              <span class="s-ico">🕑</span>
+              <div><div class="s-label">今日新增</div><div class="s-value" id="kpi-today">–</div></div>
+            </div>
+          </div>
+
+          <!-- 数据面板 -->
+          <div class="panel">
+            <div class="panel-head">
+              <h2>反馈列表</h2>
+              <div class="actions">
+                <button class="btn-danger" id="delete-btn" type="button" disabled>删除</button>
+                <div class="export-wrap">
+                  <button class="btn-pill" id="export-btn" type="button">导出 ▾</button>
+                  <div class="export-menu" id="export-menu" hidden>
+                    <button type="button" data-fmt="excel">导出为 Excel</button>
+                    <button type="button" data-fmt="csv">导出为 CSV</button>
+                  </div>
+                </div>
+                <button class="btn-icon" id="refresh" type="button" title="刷新" aria-label="刷新">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                    <polyline points="21 3 21 9 15 9" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="content"><div class="loading">加载中…</div></div>
+            <div class="pager" id="pager" hidden></div>
+          </div>
+        </section>
+
+        <section id="view-users" hidden>
+          <h1>用户分析</h1>
+          <div class="panel">
+            <div class="panel-head">
+              <h2>用户列表</h2>
+              <div class="actions">
+                <div class="export-wrap">
+                  <button class="btn-pill" id="users-export-btn" type="button">导出 ▾</button>
+                  <div class="export-menu" id="users-export-menu" hidden>
+                    <button type="button" data-ufmt="excel">导出为 Excel</button>
+                    <button type="button" data-ufmt="csv">导出为 CSV</button>
+                  </div>
+                </div>
+                <button class="btn-icon" id="users-refresh" type="button" title="刷新" aria-label="刷新">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                    <polyline points="21 3 21 9 15 9" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="users-filter">
+              <label><input type="checkbox" id="filter-launch" value="launch" />Notify me about launch</label>
+              <label><input type="checkbox" id="filter-early" value="early-bird" />Receive Early Bird reminders</label>
+              <label><input type="checkbox" id="filter-community" value="community" />Community invitations</label>
+              <button class="btn-pill" id="users-filter-btn" type="button">筛选</button>
+              <button class="btn-ghost" id="users-filter-reset" type="button">重置</button>
+            </div>
+            <div id="users-content"><div class="loading">加载中…</div></div>
+            <div class="pager" id="users-pager" hidden></div>
+          </div>
+        </section>
+        </div>
+      </div>
+    </div>
+
+    <dialog id="cell-dialog">
+      <div class="dialog-card">
+        <button class="dialog-close" id="cell-dialog-close" type="button" aria-label="关闭">×</button>
+        <h3 id="cell-dialog-title"></h3>
+        <div id="cell-dialog-body"></div>
+      </div>
+    </dialog>
+
+    <dialog id="confirm-dialog">
+      <div class="dialog-card">
+        <h3>确认删除</h3>
+        <p class="dialog-text" id="confirm-text"></p>
+        <div class="confirm-actions">
+          <button class="btn-ghost" id="confirm-cancel" type="button">取消</button>
+          <button class="btn-danger" id="confirm-ok" type="button">删除</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="./site-config.js"></script>
+    <script>
+      const copy = window.MIMMU_CONFIG.copy.form;
+
+      const COLOR_LABEL = {
+        cream: copy.colorCream, cocoa: copy.colorCocoa, blush: copy.colorBlush,
+        lavender: copy.colorLavender, mint: copy.colorMint, "sky-blue": copy.colorSkyBlue,
+        honey: copy.colorHoney, coral: copy.colorCoral,
+      };
+      const FEATURE_LABEL = {
+        hug: copy.featureHug, breathing: copy.featureBreathing, heartbeat: copy.featureHeartbeat,
+        memory: copy.featureMemory, personality: copy.featurePersonality,
+        "owner-recognition": copy.featureOwner, "voice-conversation": copy.featureVoice,
+        "sleep-monitoring": copy.featureSleep,
+      };
+      const PRICE_LABEL = {
+        "under-99": copy.priceUnder99, "99-159": copy.price99To159,
+        "159-199": copy.price159To199, "199-259": copy.price199To259,
+        "259-299": copy.price259To299,
+      };
+      const prefsCopy = window.MIMMU_CONFIG.copy.prefs || {};
+      const PREF_LABEL = {
+        launch: prefsCopy.launch, "early-bird": prefsCopy.earlyBird, community: prefsCopy.community,
+      };
+
+      const esc = (s) =>
+        String(s).replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      const label = (map, v) => map[v] || v || "—";
+
+      const dialog = document.getElementById("cell-dialog");
+      const dialogTitle = document.getElementById("cell-dialog-title");
+      const dialogBody = document.getElementById("cell-dialog-body");
+
+      function openDialog(title, bodyHtml) {
+        dialogTitle.textContent = title;
+        dialogBody.innerHTML = bodyHtml;
+        if (typeof dialog.showModal === "function") dialog.showModal();
+        else dialog.setAttribute("open", "");
+      }
+      function closeDialog() {
+        if (typeof dialog.close === "function" && dialog.open) dialog.close();
+        else dialog.removeAttribute("open");
+      }
+      document.getElementById("cell-dialog-close").addEventListener("click", closeDialog);
+      dialog.addEventListener("click", (e) => { if (e.target === dialog) closeDialog(); });
+
+      function featuresCell(features) {
+        const labels = (features || []).map((f) => label(FEATURE_LABEL, f));
+        if (!labels.length) return '<td class="col-feat"><span class="muted">—</span></td>';
+        const first = `<span class="tag">${esc(labels[0])}</span>`;
+        const more = labels.length > 1 ? `<span class="more">+${labels.length - 1}</span>` : "";
+        return `<td class="col-feat clickable" title="点击查看全部功能" data-type="features" data-features="${esc(
+          JSON.stringify(labels),
+        )}"><div class="feat-inline">${first}${more}</div></td>`;
+      }
+
+      function colorsCell(colors) {
+        const labels = (colors || []).map((c) => label(COLOR_LABEL, c));
+        if (!labels.length) return '<td class="col-color"><span class="muted">—</span></td>';
+        const first = `<span class="tag">${esc(labels[0])}</span>`;
+        const more = labels.length > 1 ? `<span class="more">+${labels.length - 1}</span>` : "";
+        return `<td class="col-color clickable" title="点击查看全部颜色" data-type="colors" data-colors="${esc(
+          JSON.stringify(labels),
+        )}"><div class="feat-inline">${first}${more}</div></td>`;
+      }
+
+      function messageCell(message) {
+        if (!message) return '<td class="col-msg"><span class="muted">—</span></td>';
+        return `<td class="col-msg clip clickable" title="点击查看完整留言" data-type="message" data-text="${esc(
+          message,
+        )}">${esc(message)}</td>`;
+      }
+
+      async function fetchStats() {
+        try {
+          const s = await fetch("/api/stats").then((r) => r.json());
+          document.getElementById("kpi-total").textContent = s.total ?? 0;
+          document.getElementById("kpi-msg").textContent = s.withMessage ?? 0;
+          document.getElementById("kpi-today").textContent = s.today ?? 0;
+        } catch (e) {
+          /* KPI 失败不影响列表 */
+        }
+      }
+
+      // 紧凑页码窗口：[1, '...', cur-1, cur, cur+1, '...', last]
+      function pageWindow(cur, pages) {
+        const set = new Set([1, pages, cur, cur - 1, cur + 1]);
+        const arr = [...set].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+        const out = [];
+        for (let i = 0; i < arr.length; i++) {
+          if (i > 0 && arr[i] - arr[i - 1] > 1) out.push("...");
+          out.push(arr[i]);
+        }
+        return out;
+      }
+
+      function renderPager() {
+        const pager = document.getElementById("pager");
+        const pages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+        pager.hidden = false;
+        const btn = (p, text, opts = {}) =>
+          `<button ${opts.disabled ? "disabled" : ""} ${opts.active ? 'class="active"' : ""} data-page="${p}">${
+            text ?? p
+          }</button>`;
+        let html = `<span class="total">共 ${totalCount} 条 · 第 ${currentPage}/${pages} 页</span>`;
+        if (pages > 1) {
+          html += btn(currentPage - 1, "上一页", { disabled: currentPage <= 1 });
+          pageWindow(currentPage, pages).forEach((n) => {
+            html += n === "..." ? '<span class="dots">…</span>' : btn(n, String(n), { active: n === currentPage });
+          });
+          html += btn(currentPage + 1, "下一页", { disabled: currentPage >= pages });
+        }
+        pager.innerHTML = html;
+      }
+
+      // 选择状态（按页，翻页/刷新后重置）
+      const selectedIds = new Set();
+      function updateDeleteBtn() {
+        const btn = document.getElementById("delete-btn");
+        btn.disabled = selectedIds.size === 0;
+        btn.textContent = selectedIds.size ? `删除 (${selectedIds.size})` : "删除";
+      }
+
+      const PAGE_SIZE = 20;
+      let currentPage = 1;
+      let totalCount = 0;
+      async function load(page = currentPage) {
+        const content = document.getElementById("content");
+        const pager = document.getElementById("pager");
+        const refreshBtn = document.getElementById("refresh");
+        refreshBtn.classList.add("spinning");
+        selectedIds.clear();
+        updateDeleteBtn();
+        content.innerHTML = '<div class="loading">加载中…</div>';
+        try {
+          fetchStats();
+          const data = await fetch(`/api/feedback?page=${page}&size=${PAGE_SIZE}`).then((r) => r.json());
+          const list = data.items || [];
+          totalCount = data.total || 0;
+          currentPage = data.page || page;
+
+          if (!totalCount) {
+            content.innerHTML = '<div class="empty">还没有任何反馈提交。</div>';
+            pager.hidden = true;
+            return;
+          }
+
+          const rows = list.map((it) => `
+            <tr>
+              <td class="col-check"><input type="checkbox" data-id="${it.id}" /></td>
+              <td class="col-email clip" title="${esc(it.email)}">${esc(it.email)}</td>
+              <td class="col-name clip" title="${esc(it.name)}">${esc(it.name)}</td>
+              ${colorsCell(it.favoriteColor)}
+              ${featuresCell(it.features)}
+              <td class="col-price">${esc(label(PRICE_LABEL, it.expectedPrice))}</td>
+              ${messageCell(it.message)}
+              <td class="col-time muted">${esc(it.createdAt)}</td>
+            </tr>`).join("");
+
+          content.innerHTML = `
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-check"><input type="checkbox" id="select-all" /></th>
+                  <th class="col-email">邮箱</th>
+                  <th class="col-name">姓名</th>
+                  <th class="col-color">喜爱颜色</th>
+                  <th class="col-feat">期望功能</th>
+                  <th class="col-price">预期价格</th>
+                  <th class="col-msg">留言</th>
+                  <th class="col-time">提交时间</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>`;
+
+          content.querySelector("tbody").addEventListener("click", (e) => {
+            const cell = e.target.closest(".clickable");
+            if (!cell) return;
+            if (cell.dataset.type === "message") {
+              openDialog("留言", `<p class="dialog-text">${esc(cell.dataset.text)}</p>`);
+            } else if (cell.dataset.type === "features") {
+              const labels = JSON.parse(cell.dataset.features);
+              openDialog(
+                "期望功能",
+                `<div class="dialog-tags">${labels
+                  .map((l) => `<span class="tag">${esc(l)}</span>`)
+                  .join("")}</div>`,
+              );
+            } else if (cell.dataset.type === "colors") {
+              const labels = JSON.parse(cell.dataset.colors);
+              openDialog(
+                "喜爱颜色",
+                `<div class="dialog-tags">${labels
+                  .map((l) => `<span class="tag">${esc(l)}</span>`)
+                  .join("")}</div>`,
+              );
+            }
+          });
+
+          // 复选框：全选 + 单行
+          const selectAll = content.querySelector("#select-all");
+          const rowBoxes = [...content.querySelectorAll("tbody input[data-id]")];
+          selectAll.addEventListener("change", () => {
+            rowBoxes.forEach((cb) => {
+              cb.checked = selectAll.checked;
+              const id = Number(cb.dataset.id);
+              if (selectAll.checked) selectedIds.add(id);
+              else selectedIds.delete(id);
+            });
+            updateDeleteBtn();
+          });
+          rowBoxes.forEach((cb) => {
+            cb.addEventListener("change", () => {
+              const id = Number(cb.dataset.id);
+              if (cb.checked) selectedIds.add(id);
+              else selectedIds.delete(id);
+              selectAll.checked = rowBoxes.every((c) => c.checked);
+              updateDeleteBtn();
+            });
+          });
+
+          renderPager();
+        } catch (e) {
+          content.innerHTML = '<div class="empty">加载失败，请刷新重试。</div>';
+          document.getElementById("pager").hidden = true;
+        } finally {
+          refreshBtn.classList.remove("spinning");
+        }
+      }
+
+      // ---- 导出 ----
+      const EXPORT_HEADERS = ["邮箱", "姓名", "喜爱颜色", "期望功能", "预期价格", "留言", "提交时间"];
+      function exportRow(it) {
+        return [
+          it.email || "",
+          it.name || "",
+          (it.favoriteColor || []).map((c) => label(COLOR_LABEL, c)).join("、"),
+          (it.features || []).map((f) => label(FEATURE_LABEL, f)).join("、"),
+          label(PRICE_LABEL, it.expectedPrice),
+          it.message || "",
+          it.createdAt || "",
+        ];
+      }
+      function dateStamp() {
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+      }
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+      // 导出始终取全部数据（与当前页无关）
+      async function fetchAllForExport() {
+        const data = await fetch("/api/feedback?all=1").then((r) => r.json());
+        return data.items || [];
+      }
+      function exportCsv(list) {
+        const cell = (v) => `"${String(v).replace(/"/g, '""')}"`;
+        const rows = [EXPORT_HEADERS, ...list.map(exportRow)];
+        const csv = rows.map((r) => r.map(cell).join(",")).join("\r\n");
+        // BOM 让 Excel 正确识别 UTF-8 中文
+        downloadBlob(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" }), `feedback-${dateStamp()}.csv`);
+      }
+      const exportBtn = document.getElementById("export-btn");
+      const exportMenu = document.getElementById("export-menu");
+      exportBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        exportMenu.hidden = !exportMenu.hidden;
+      });
+      document.addEventListener("click", () => { exportMenu.hidden = true; });
+      exportMenu.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-fmt]");
+        if (!btn) return;
+        exportMenu.hidden = true;
+        if (!totalCount) {
+          openDialog("导出", '<p class="dialog-text">暂无数据可导出。</p>');
+          return;
+        }
+        if (btn.dataset.fmt === "excel") {
+          // 后端生成真正的 .xlsx，直接下载
+          const a = document.createElement("a");
+          a.href = "/api/feedback/export.xlsx";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          return;
+        }
+        // CSV 仍前端生成
+        const list = await fetchAllForExport();
+        if (!list.length) {
+          openDialog("导出", '<p class="dialog-text">暂无数据可导出。</p>');
+          return;
+        }
+        exportCsv(list);
+      });
+
+      // 分页点击
+      document.getElementById("pager").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-page]");
+        if (!b || b.disabled) return;
+        const p = parseInt(b.dataset.page, 10);
+        if (p >= 1) load(p);
+      });
+
+      // ---- 删除 ----
+      const confirmDialog = document.getElementById("confirm-dialog");
+      let confirmResolve = null;
+      function settleConfirm(result) {
+        if (confirmDialog.open) confirmDialog.close();
+        const r = confirmResolve;
+        confirmResolve = null;
+        if (r) r(result);
+      }
+      function askConfirm(message) {
+        return new Promise((resolve) => {
+          confirmResolve = resolve;
+          document.getElementById("confirm-text").textContent = message;
+          if (typeof confirmDialog.showModal === "function") confirmDialog.showModal();
+          else confirmDialog.setAttribute("open", "");
+        });
+      }
+      document.getElementById("confirm-ok").addEventListener("click", () => settleConfirm(true));
+      document.getElementById("confirm-cancel").addEventListener("click", () => settleConfirm(false));
+      confirmDialog.addEventListener("cancel", () => settleConfirm(false)); // ESC
+      confirmDialog.addEventListener("click", (e) => { if (e.target === confirmDialog) settleConfirm(false); });
+
+      async function deleteSelected() {
+        const ids = [...selectedIds];
+        if (!ids.length) return;
+        const ok = await askConfirm(`确定要删除选中的 ${ids.length} 条数据吗？此操作不可恢复。`);
+        if (!ok) return;
+        try {
+          const res = await fetch("/api/feedback", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids }),
+          });
+          if (!res.ok) throw new Error();
+          const newTotal = Math.max(0, totalCount - ids.length);
+          const maxPage = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
+          load(Math.min(currentPage, maxPage));
+        } catch (e) {
+          openDialog("删除失败", '<p class="dialog-text">删除失败，请重试。</p>');
+        }
+      }
+      document.getElementById("delete-btn").addEventListener("click", deleteSelected);
+
+      // 侧栏收起/展开（记住状态）
+      const layout = document.querySelector(".layout");
+      const COLLAPSE_KEY = "mimmu-admin-sidebar-collapsed";
+      if (localStorage.getItem(COLLAPSE_KEY) === "1") layout.classList.add("collapsed");
+      document.getElementById("collapse-btn").addEventListener("click", () => {
+        const collapsed = layout.classList.toggle("collapsed");
+        localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
+      });
+
+      document.getElementById("refresh").addEventListener("click", () => load(currentPage));
+
+      // ================= 用户分析视图 =================
+      const USERS_PAGE_SIZE = 20;
+      let usersPage = 1;
+      let usersTotal = 0;
+      let usersLoaded = false;
+      let usersPrefs = []; // 当前筛选的订阅偏好
+
+      function renderUsersPager() {
+        const pager = document.getElementById("users-pager");
+        const pages = Math.max(1, Math.ceil(usersTotal / USERS_PAGE_SIZE));
+        pager.hidden = false;
+        const btn = (p, text, opts = {}) =>
+          `<button ${opts.disabled ? "disabled" : ""} ${opts.active ? 'class="active"' : ""} data-page="${p}">${
+            text ?? p
+          }</button>`;
+        let html = `<span class="total">共 ${usersTotal} 位用户 · 第 ${usersPage}/${pages} 页</span>`;
+        if (pages > 1) {
+          html += btn(usersPage - 1, "上一页", { disabled: usersPage <= 1 });
+          pageWindow(usersPage, pages).forEach((n) => {
+            html += n === "..." ? '<span class="dots">…</span>' : btn(n, String(n), { active: n === usersPage });
+          });
+          html += btn(usersPage + 1, "下一页", { disabled: usersPage >= pages });
+        }
+        pager.innerHTML = html;
+      }
+
+      async function loadUsers(page = usersPage) {
+        const content = document.getElementById("users-content");
+        const pager = document.getElementById("users-pager");
+        const refreshBtn = document.getElementById("users-refresh");
+        refreshBtn.classList.add("spinning");
+        content.innerHTML = '<div class="loading">加载中…</div>';
+        try {
+          const prefsQuery = usersPrefs.length ? `&prefs=${encodeURIComponent(usersPrefs.join(","))}` : "";
+          const data = await fetch(`/api/feedback?page=${page}&size=${USERS_PAGE_SIZE}${prefsQuery}`).then((r) =>
+            r.json(),
+          );
+          const list = data.items || [];
+          usersTotal = data.total || 0;
+          usersPage = data.page || page;
+
+          if (!usersTotal) {
+            content.innerHTML = usersPrefs.length
+              ? '<div class="empty">没有符合筛选条件的用户。</div>'
+              : '<div class="empty">还没有任何用户提交。</div>';
+            pager.hidden = true;
+            return;
+          }
+
+          const rows = list.map((it) => {
+            const prefs = (it.preferences || []).map((p) => label(PREF_LABEL, p));
+            const prefsHtml = prefs.length
+              ? `<div class="tags">${prefs.map((p) => `<span class="tag">${esc(p)}</span>`).join("")}</div>`
+              : '<span class="muted">—</span>';
+            return `
+              <tr>
+                <td class="clip" title="${esc(it.email)}">${esc(it.email)}</td>
+                <td class="clip" title="${esc(it.name)}">${esc(it.name)}</td>
+                <td>${prefsHtml}</td>
+              </tr>`;
+          }).join("");
+
+          content.innerHTML = `
+            <table class="users-table">
+              <thead>
+                <tr><th>邮箱</th><th>姓名</th><th>订阅偏好</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>`;
+          renderUsersPager();
+        } catch (e) {
+          content.innerHTML = '<div class="empty">加载失败，请刷新重试。</div>';
+          pager.hidden = true;
+        } finally {
+          refreshBtn.classList.remove("spinning");
+        }
+      }
+
+      document.getElementById("users-refresh").addEventListener("click", () => loadUsers(usersPage));
+
+      // 订阅偏好筛选
+      const filterBoxes = [
+        document.getElementById("filter-launch"),
+        document.getElementById("filter-early"),
+        document.getElementById("filter-community"),
+      ];
+      document.getElementById("users-filter-btn").addEventListener("click", () => {
+        usersPrefs = filterBoxes.filter((b) => b.checked).map((b) => b.value);
+        loadUsers(1);
+      });
+      document.getElementById("users-filter-reset").addEventListener("click", () => {
+        filterBoxes.forEach((b) => (b.checked = false));
+        usersPrefs = [];
+        loadUsers(1);
+      });
+
+      // 导出当前筛选下的全部用户（Excel 走后端真 .xlsx；CSV 前端生成）
+      const uExportBtn = document.getElementById("users-export-btn");
+      const uExportMenu = document.getElementById("users-export-menu");
+      uExportBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        uExportMenu.hidden = !uExportMenu.hidden;
+      });
+      document.addEventListener("click", () => { uExportMenu.hidden = true; });
+      uExportMenu.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-ufmt]");
+        if (!btn) return;
+        uExportMenu.hidden = true;
+        const prefsQuery = usersPrefs.length ? `prefs=${encodeURIComponent(usersPrefs.join(","))}` : "";
+
+        // 导出完整反馈字段（订阅偏好仅作筛选条件）
+        if (btn.dataset.ufmt === "excel") {
+          const a = document.createElement("a");
+          a.href = `/api/feedback/export.xlsx${prefsQuery ? "?" + prefsQuery : ""}`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          return;
+        }
+
+        // CSV：与反馈数据同样的完整字段
+        const data = await fetch(`/api/feedback?all=1${prefsQuery ? "&" + prefsQuery : ""}`).then((r) => r.json());
+        const list = data.items || [];
+        if (!list.length) {
+          openDialog("导出", '<p class="dialog-text">没有可导出的用户。</p>');
+          return;
+        }
+        const cell = (v) => `"${String(v).replace(/"/g, '""')}"`;
+        const rows = [EXPORT_HEADERS, ...list.map(exportRow)];
+        const csv = rows.map((r) => r.map(cell).join(",")).join("\r\n");
+        downloadBlob(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" }), `feedback-${dateStamp()}.csv`);
+      });
+
+      document.getElementById("users-pager").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-page]");
+        if (!b || b.disabled) return;
+        const p = parseInt(b.dataset.page, 10);
+        if (p >= 1) loadUsers(p);
+      });
+
+      // ================= 视图切换 =================
+      const VIEW_TITLE = { feedback: "反馈数据", users: "用户分析" };
+      function switchView(view) {
+        document.getElementById("view-feedback").hidden = view !== "feedback";
+        document.getElementById("view-users").hidden = view !== "users";
+        document.getElementById("crumb-view").textContent = VIEW_TITLE[view] || "";
+        document.querySelectorAll(".nav-item[data-view]").forEach((el) => {
+          el.classList.toggle("active", el.dataset.view === view);
+        });
+        if (view === "users" && !usersLoaded) {
+          usersLoaded = true;
+          loadUsers(1);
+        }
+      }
+      document.querySelectorAll(".nav-item[data-view]").forEach((el) => {
+        el.addEventListener("click", () => switchView(el.dataset.view));
+      });
+
+      load(1);
+    </script>
+  </body>
+</html>

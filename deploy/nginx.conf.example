@@ -1,0 +1,66 @@
+# ============================================================
+# Cuddolab 反向代理配置示例（nginx）
+# 用法：替换占位符（<...>），放到 /etc/nginx/sites-available/ 并软链到 sites-enabled/
+#       nginx -t 检查，systemctl reload nginx 生效
+#
+# 配套：应用 .env 中设 TRUST_PROXY=1（单个 nginx 前置）
+#       应用监听 127.0.0.1:3000（公开）与 127.0.0.1:3001（后台）
+# ============================================================
+
+# ---------- 公开服务：表单页，面向全网，HTTPS ----------
+server {
+    listen 80;
+    server_name <feedback.example.com>;
+    # 全部跳转到 HTTPS
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name <feedback.example.com>;
+
+    ssl_certificate     /etc/letsencrypt/live/<feedback.example.com>/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<feedback.example.com>/privkey.pem;
+
+    # 限制请求体大小（表单很小，128k 足够，防滥用）
+    client_max_body_size 128k;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# ---------- 后台服务：仅内部 / 办公室 IP，可访问数据 ----------
+# 方案 A：单独域名 + HTTPS + IP 白名单（运营用浏览器直接访问）
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name <admin-feedback.example.com>;
+
+    ssl_certificate     /etc/letsencrypt/live/<admin-feedback.example.com>/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<admin-feedback.example.com>/privkey.pem;
+
+    # nginx 层 IP 白名单（与应用层白名单形成双保险）
+    allow <办公室出口IP>;     # 例：203.0.113.10
+    # allow <其它允许的IP>;
+    deny  all;
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# 方案 B（更省事）：后台不经 nginx，运营走 SSH 隧道访问 127.0.0.1:3001
+#   ssh -L 3001:127.0.0.1:3001 user@server  →  浏览器开 http://localhost:3001
+#   适合只有少量技术人员需要看后台的情况；非技术运营建议用方案 A。

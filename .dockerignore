@@ -1,0 +1,15 @@
+node_modules
+.git
+.gitignore
+feedback.db
+feedback.db-shm
+feedback.db-wal
+backups
+logs
+data
+.env
+*.log
+Dockerfile
+docker-compose.yml
+.dockerignore
+.claude

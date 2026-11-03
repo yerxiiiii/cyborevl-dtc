@@ -1,0 +1,23 @@
+# systemd 单元（pm2 之外的另一种守护方式）
+# 安装：
+#   sudo cp deploy/cuddolab.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now cuddolab
+# 查看日志：journalctl -u cuddolab -f
+[Unit]
+Description=Cuddolab feedback service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/cuddolab
+ExecStart=/usr/bin/node --env-file=.env server.js
+Restart=on-failure
+RestartSec=3
+# 优雅关闭：发 SIGTERM 后留足时间处理完现有请求
+TimeoutStopSec=12
+User=cuddolab
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
