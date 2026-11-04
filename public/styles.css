@@ -27,6 +27,7 @@ h1, h2, h3, p { margin: 0; }
 h1, h2, h3 { font-weight: 600; letter-spacing: -.045em; line-height: 1.08; text-wrap: balance; }
 h2 { font-size: clamp(44px, 5.6vw, 88px); }
 h3 { font-size: clamp(26px, 2.5vw, 36px); }
+.title-phrase { display: inline-block; }
 p { text-wrap: pretty; }
 .section-light { background: var(--paper); color: var(--ink); }
 .eyebrow { margin-bottom: 22px; font-size: clamp(16px, 1.5vw, 22px); font-weight: 500; }
