@@ -214,3 +214,65 @@ h1,h2,h3,.why-card-content strong{font-weight:400}
 .hardware-spotlight .spotlight-heading{order:1;margin:0 auto 78px}
 .hardware-spotlight .spotlight-art{order:2}
 @media(max-width:580px){.hardware-spotlight .spotlight-heading{margin:0 auto 44px}}
+
+/* Keep header, copy and captions in flow so short windows and longer translations
+   grow the hero instead of pushing its copy behind the navigation. */
+.hero-immersive{display:flex;flex-direction:column;min-height:100svh;gap:0;align-items:stretch}
+.hero-immersive .site-header{position:relative;inset:auto;flex:none;gap:24px;grid-template-columns:auto minmax(0,1fr) auto}
+.site-header .site-nav{justify-content:center}
+.site-header .wordmark{white-space:nowrap}
+.site-header .header-actions{min-width:0}
+.site-header .header-cta{min-height:44px}
+.site-header .header-cta span{font-size:inherit}
+.lang-toggle{min-width:44px;min-height:44px}
+.hero-overlay{position:relative;inset:auto;flex:1;align-items:flex-end;padding:clamp(48px,8svh,100px) clamp(20px,7vw,120px) clamp(64px,10svh,140px)}
+.hero-overlay .hero-copy{width:100%;min-width:0}
+.hero-overlay .kicker{line-height:1.6}
+.status-dot{flex-shrink:0}
+.hero-actions{flex-wrap:wrap;margin-bottom:0}
+.hero-actions .button span{font-size:inherit}
+.hero-meta-overlay{position:relative;inset:auto;padding:0 clamp(20px,7vw,120px) 32px;padding-right:230px;min-height:48px}
+.hero-product-active .site-header-overlay{background:none}
+.hero-product-active .site-header-overlay .wordmark span:not(.wordmark-dot){color:inherit}
+.core-idea{display:block;margin-top:0}
+.core-idea-heading h2{max-width:none}
+.experience-layout>*,.experience-detail>*,.waitlist>*{min-width:0}
+.experience-detail-copy{overflow-wrap:anywhere}
+.why-gallery-card{display:flex}
+.why-card-content{position:relative;inset:auto;width:100%;min-height:inherit;padding-top:clamp(170px,16vw,260px)}
+.why-card-content strong{position:static;transform:none;margin:0;max-width:100%;overflow-wrap:anywhere}
+.why-card-content small{position:static;margin-top:18px}
+.why-card-body{position:static;margin-top:auto;padding-top:32px}
+.why-card-content em{position:static;margin-top:24px}
+.site-footer>div{flex-wrap:wrap}
+
+@media(max-width:1200px){
+  .experience-layout{grid-template-columns:1fr;gap:36px}
+  .experience-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .experience-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .experience-tab{grid-template-columns:1fr;gap:10px;padding:20px 0}
+  .experience-tab>span{grid-row:auto}
+}
+@media(max-width:900px){
+  .hero-immersive .site-header{grid-template-columns:minmax(0,1fr) auto;gap:12px}
+  .hero-meta-overlay{padding-bottom:32px}
+  .why-card-content{padding-top:180px}
+}
+@media(max-width:580px){
+  .hero-overlay{padding:48px 20px 64px}
+  .hero-overlay h1{max-width:100%;font-size:clamp(36px,10.5vw,60px);line-height:1.08}
+  .hero-overlay .hero-intro{font-size:16px}
+  .hero-meta-overlay{padding:0 20px 68px;gap:10px;min-height:0}
+  .hero-progress{bottom:28px}
+  .header-actions{gap:8px}
+  .site-header .header-cta{gap:6px}
+  .hero-actions .button{min-height:44px}
+  .experience-tabs{display:flex;gap:0}
+  .experience-tab{grid-template-columns:32px minmax(0,1fr);gap:4px 12px}
+  .experience-tab>span{grid-row:span 2}
+  .experience-detail{grid-template-columns:minmax(0,1fr)}
+  .why-card-content{padding-top:155px}
+  .spotlight-frame{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:24px 20px}
+  .spotlight-frame img{width:100%;height:auto;grid-row:1}
+  .spotlight-label{position:static;text-align:center;font-size:10px;line-height:1.6}
+}

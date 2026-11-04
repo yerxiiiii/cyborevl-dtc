@@ -7,11 +7,15 @@
   "scripts": {
     "start": "node server.js",
     "dev": "ADMIN_PUBLIC=1 node --watch server.js",
-    "backup": "node scripts/backup.js"
+    "backup": "node scripts/backup.js",
+    "test:responsive": "node scripts/check-responsive.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
     "exceljs": "^4.4.0",
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.43.1"
   }
 }

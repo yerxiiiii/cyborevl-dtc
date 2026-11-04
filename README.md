@@ -107,6 +107,8 @@ npm run dev      # 开发模式：自动重启 + 跳过后台 IP 白名单
 
 ### GitHub Pages（公开静态预览）
 
+响应式回归：运行 `npm run test:responsive`，会自动启动临时静态服务，检查手机、平板、桌面和矮窗口下的中英文排版、两张轮播图、导航重叠和横向溢出。首次运行前执行 `npx puppeteer browsers install chrome` 安装测试浏览器。可用 `BLOCK_WEB_FONTS=1 npm run test:responsive` 验证网络字体加载失败时的布局；`SITE_URL` 可指定线上地址。Pages 发布前会自动运行检查。
+
 仓库包含 `.github/workflows/pages.yml`。推送到 `main` 后会自动发布 `public/` 目录，网站地址为：
 
 `https://<你的 GitHub 用户名>.github.io/<仓库名>/`
