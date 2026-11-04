@@ -49,7 +49,7 @@ try {
           const rect = selector => document.querySelector(selector).getBoundingClientRect();
           const overlap = (a, b) => a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1;
           if (rect('.hero-copy').top < rect('.site-header').bottom + 24) issues.push('Header overlaps hero copy');
-          if (rect('.hero-copy').bottom > rect('.hero-meta').top) issues.push('Hero copy overlaps captions');
+          if (rect('.hero-copy').bottom > rect('.hero-progress').top - 24) issues.push('Hero copy overlaps slide progress');
           if (document.documentElement.scrollWidth > innerWidth) issues.push('Horizontal page overflow');
           const logo = rect('.site-header .wordmark');
           const actions = rect('.header-actions');
@@ -57,11 +57,8 @@ try {
           if (actions.right > innerWidth || actions.left < 0) issues.push('Header controls outside viewport');
           const nav = rect('.site-nav');
           if (nav.width && (overlap(nav, actions) || overlap(nav, logo))) issues.push('Navigation overlaps header controls');
-          document.querySelectorAll('.hero-meta span').forEach(span => {
-            if (overlap(span.getBoundingClientRect(), rect('.hero-progress'))) issues.push('Caption overlaps slide progress');
-          });
           document.querySelectorAll('.why-card-content').forEach((card, i) => {
-            const children = ['strong', 'small', '.why-card-body', 'em'].map(s => card.querySelector(s).getBoundingClientRect());
+            const children = ['h3', '.why-card-body'].map(s => card.querySelector(s).getBoundingClientRect());
             children.forEach((r, j) => {
               if (j && r.top < children[j - 1].bottom - 1) issues.push(`Card ${i}: overlapping copy`);
               if (r.bottom > card.getBoundingClientRect().bottom + 1) issues.push(`Card ${i}: clipped copy`);
@@ -92,6 +89,8 @@ try {
   await page.waitForSelector('.hero-scene-layer.is-product-scene', { timeout: 6000 });
   await page.click('[data-experience="return"]');
   assert.equal(await page.$eval('[data-experience="return"]', el => el.getAttribute('aria-selected')), 'true');
+  const language = await page.evaluate(() => document.documentElement.dataset.language);
+  assert.equal(await page.$eval('[data-experience-title]', el => el.textContent), language === 'zh' ? '回到它。' : 'Come back to it.');
   assert.deepEqual(errors, [], 'Browser runtime errors');
   console.log('PASS automatic carousel, slide colors, language toggle and experience tabs');
 } finally {

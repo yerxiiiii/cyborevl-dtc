@@ -74,17 +74,10 @@ function applyLanguage(language) {
   languageToggle.querySelector('.lang-current').textContent = currentLanguage === 'en' ? 'EN' : '中';
   languageToggle.querySelector('.lang-next').textContent = currentLanguage === 'en' ? '中' : 'EN';
   languageToggle.setAttribute('aria-label', getTranslation(currentLanguage === 'en' ? 'aria.switchToChinese' : 'aria.switchToEnglish'));
-  updateScene(activeScene, false);
-  updateExperience(activeExperience, false);
+  updateExperience(activeExperience);
 }
 
 languageToggle?.addEventListener('click', () => applyLanguage(currentLanguage === 'en' ? 'zh' : 'en'));
-
-const sceneTitle = document.querySelector('[data-scene-title]');
-const sceneBody = document.querySelector('[data-scene-body]');
-const sceneIndex = document.querySelector('[data-scene-index]');
-const sceneControls = [...document.querySelectorAll('[data-scene-control]')];
-let activeScene = 0;
 
 const heroSceneLayer = document.querySelector('.hero-scene-layer');
 const heroSceneImages = [...document.querySelectorAll('.hero-scene-image')];
@@ -125,37 +118,12 @@ function scheduleHeroScene() {
 setHeroScene('product');
 scheduleHeroScene();
 
-function updateScene(index, animate = true) {
-  const variants = translations[currentLanguage].scene.variants;
-  activeScene = (index + variants.length) % variants.length;
-  const scene = variants[activeScene];
-  if (sceneIndex) sceneIndex.textContent = scene.index;
-  if (!sceneTitle || !sceneBody) return;
-  if (animate) [sceneTitle, sceneBody].forEach((element) => element.classList.add('is-changing'));
-  sceneTitle.textContent = scene.title;
-  sceneBody.textContent = scene.body;
-  sceneControls.forEach((control) => control.classList.toggle('is-active', control.dataset.sceneControl === String(activeScene)));
-  if (animate) window.setTimeout(() => [sceneTitle, sceneBody].forEach((element) => element.classList.remove('is-changing')), 220);
-}
-
-sceneControls.forEach((control) => control.addEventListener('click', () => {
-  if (control.dataset.sceneControl === 'prev') return updateScene(activeScene - 1);
-  if (control.dataset.sceneControl === 'next') return updateScene(activeScene + 1);
-  updateScene(Number(control.dataset.sceneControl));
-}));
-
-const whyCards = [...document.querySelectorAll('[data-why-card]')];
-whyCards.forEach((card) => card.addEventListener('click', () => {
-  whyCards.forEach((item) => item.classList.toggle('is-active', item === card));
-}));
-
 const experienceTabs = [...document.querySelectorAll('[data-experience]')];
 const experienceTitle = document.querySelector('[data-experience-title]');
 const experienceBody = document.querySelector('[data-experience-body]');
-const experienceFoot = document.querySelector('[data-experience-foot]');
 let activeExperience = 'capture';
 
-function updateExperience(key, animate = true) {
+function updateExperience(key) {
   activeExperience = key;
   const content = translations[currentLanguage].experience[key];
   experienceTabs.forEach((tab) => {
@@ -163,15 +131,9 @@ function updateExperience(key, animate = true) {
     tab.classList.toggle('is-active', isActive);
     tab.setAttribute('aria-selected', String(isActive));
   });
-  if (!content || !experienceTitle || !experienceBody || !experienceFoot) return;
-  if (animate) {
-    [experienceTitle, experienceBody, experienceFoot].forEach((element) => element.classList.remove('is-changing'));
-    requestAnimationFrame(() => [experienceTitle, experienceBody, experienceFoot].forEach((element) => element.classList.add('is-changing')));
-  }
-  experienceTitle.innerHTML = content.title;
+  if (!content || !experienceTitle || !experienceBody) return;
+  experienceTitle.textContent = content.title;
   experienceBody.textContent = content.body;
-  experienceFoot.textContent = content.foot;
-  document.querySelector('[data-i18n="experience.activeLabel"]').textContent = `${currentLanguage === 'zh' ? '当前闭环' : 'ACTIVE LOOP'} / ${String(experienceTabs.findIndex((tab) => tab.dataset.experience === key) + 1).padStart(2, '0')}`;
 }
 
 experienceTabs.forEach((tab) => tab.addEventListener('click', () => updateExperience(tab.dataset.experience)));
